@@ -99,5 +99,6 @@ while(True):
     
     i += 1
     for result in api_response['results']:
-        saveImage(addMetadata(imageStream, result))
+        finalStream = addMetadata(imageStream, result)
+    saveImage(finalStream, i) 
     
