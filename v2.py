@@ -5,6 +5,7 @@ import gpsd
 import logging
 import io
 import time
+import datetime
 #import numpy as np
 import geopy.distance
 import requests
@@ -22,13 +23,13 @@ TOKEN = os.getenv('API_TOKEN')
 
 
 # Adds folder for images
-os.makedirs("responses", exist_ok=True)
-subfolders = ['images', 'data']
+
+today = str(datetime.date.today())
+dirPath = f"./responses/{today}"
+os.makedirs(dirPath, exist_ok=True)
 
 # Iterate over the subfolders and create them if they don't already exist
-for subfolder in subfolders:
-    subfolder_path = os.path.join('responses', subfolder)
-    os.makedirs(subfolder_path, exist_ok=True)
+os.makedirs(f'{dirPath}/images', exist_ok=True)
 
 # implements the Raspberry Pi camera 
 # returns image stream 
@@ -49,26 +50,22 @@ def getResponse(image_stream):
     print(response.json())
     return response.json()
 
-# Returns an image stream with plates
-def addMetadata(image_stream, result):
+
+def associateData(result, location, time):
     # Parses information from result
     plate = result.get('plate')
     newData = { 'confidence': result.get('score'),
-                'vehicle': result.get('vehicle', {}).get('type')
+                'vehicle': result.get('vehicle', {}).get('type'),
+                'location': location
                 }
-
-    img = Image.open(image_stream)                          
-    currentData = json.loads(img.info.get('metadata', '{}') or '{}')  # gets current metadata
-    currentData[plate] = json.dumps(newData)                            # appends newly parsed info into metadata
-    img.info['metadata'] = json.dumps(currentData)          # n.b. the key for the data is the plate
-    # returns as image stream
-    newStream = io.BytesIO()
-    img.save(newStream, format='JPEG')
-    return newStream
+    path = f"./{dirPath}/images/image_{time}"
+    with open(f"./{dirPath}/data.txt", 'a') as f:
+        f.write(f"{plate} {newData.get('location')} {path}\n")
+        
         
 # Saves image stream in ./responses/images directory
 def saveImage(image, filename):
-    with open(f"./responses/images/image_{filename}", 'wb') as f:
+    with open(f"./{dirPath}/images/image_{filename}", 'wb') as f:
             f.write(image.getvalue())
     print(f"Saved image as image_{filename}")
 
@@ -84,9 +81,9 @@ while(True):
 
     # Reiterates loop until GPS has moved significantly 
     """if (geopy.distance.geodesic(coordsPrev, coords).km < 0.00001) :
-        continue
+        continue"""
 
-    coordsPrev = coords"""
+    coordsPrev = coords
 
     imageStream = getImageStream()
 
@@ -95,9 +92,10 @@ while(True):
     # Reiterates loop if no plate is found 
     if not api_response.get('results'):
          continue
-    
+   
+    timestamp = datetime.datetime.now().strftime('%H-%M-%S')
     i += 1
     for result in api_response['results']:
-        finalStream = addMetadata(imageStream, result)
-    saveImage(finalStream, i) 
+        associateData(result, coords, timestamp)
+    saveImage(imageStream, timestamp) 
     
