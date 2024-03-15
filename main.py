@@ -58,11 +58,9 @@ while(True):
         with io.BytesIO(snapshot) as image_stream:
             response = requests.post(
                 'https://api.platerecognizer.com/v1/plate-reader/',
-                files=dict(upload=image_stream),
+                files={'upload': image_stream},
                 headers={'Authorization': f'Token {TOKEN}'}
             )
-    #(Image.open(io.BytesIO(image_left.shot.image.data))).save("./images/" + str(i+1) + "left_fisheye.png")
-    #(Image.open(io.BytesIO(image_right.shot.image.data))).save("./images/"+ str(i+1)+"right_fisheye.png")
 
 
     
