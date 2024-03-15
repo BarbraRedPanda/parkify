@@ -1,0 +1,7 @@
+geopy==2.4.1
+numpy==1.26.4
+picamera==1.13
+Pillow==10.2.0
+python-dotenv==1.0.1
+Requests==2.31.0
+gpsd-py3==0.3.0
