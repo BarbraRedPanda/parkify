@@ -2,3 +2,6 @@
 bin/
 lib/
 pyvenv.cfg
+venv/
+__pycache__/
+responses/

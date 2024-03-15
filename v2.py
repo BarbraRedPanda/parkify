@@ -46,8 +46,8 @@ def getResponse(image_stream):
         files={'upload': image_stream},
         headers={'Authorization': f'Token {TOKEN}'}
     )
-    print(response)
-    return json.loads(response)
+    print(response.json())
+    return response.json()
 
 # Returns an image stream with plates
 def addMetadata(image_stream, result):
@@ -58,10 +58,9 @@ def addMetadata(image_stream, result):
                 }
 
     img = Image.open(image_stream)                          
-    currentData = json.loads(img.info.get('metadata', {}))  # gets current metadata
-    currentData[plate] = newData                            # appends newly parsed info into metadata
+    currentData = json.loads(img.info.get('metadata', '{}') or '{}')  # gets current metadata
+    currentData[plate] = json.dumps(newData)                            # appends newly parsed info into metadata
     img.info['metadata'] = json.dumps(currentData)          # n.b. the key for the data is the plate
-    
     # returns as image stream
     newStream = io.BytesIO()
     img.save(newStream, format='JPEG')
@@ -84,10 +83,10 @@ while(True):
     coords = (packet.lat, packet.lon)
 
     # Reiterates loop until GPS has moved significantly 
-    if (geopy.distance.geodesic(coordsPrev, coords).km < 0.00001) :
+    """if (geopy.distance.geodesic(coordsPrev, coords).km < 0.00001) :
         continue
 
-    coordsPrev = coords
+    coordsPrev = coords"""
 
     imageStream = getImageStream()
 
