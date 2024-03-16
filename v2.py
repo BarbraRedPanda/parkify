@@ -10,6 +10,7 @@ import datetime
 import geopy.distance
 import requests
 import json
+import csv
 
 from PIL import Image
 from picamera import PiCamera
@@ -51,16 +52,14 @@ def getResponse(image_stream):
     return response.json()
 
 
-def associateData(result, location, time):
-    # Parses information from result
-    plate = result.get('plate')
-    newData = { 'confidence': result.get('score'),
-                'vehicle': result.get('vehicle', {}).get('type'),
-                'location': location
-                }
-    path = f"./{dirPath}/images/image_{time}"
-    with open(f"./{dirPath}/data.txt", 'a') as f:
-        f.write(f"{plate} {newData.get('location')} {path}\n")
+# Adds data to CSV file ./responses/responsesDATE/data.csv
+# data parameter is an array of [plate, confidence, vehicle type, coords, time, image path]
+def addData(data):
+    with open(f'./{dirPath}/data.csv', 'a', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(data)
+
+
         
         
 # Saves image stream in ./responses/images directory
@@ -69,7 +68,6 @@ def saveImage(image, filename):
             f.write(image.getvalue())
     print(f"Saved image as image_{filename}")
 
-i = 0
 
 # Takes a picture every 3 seconds if user has moved 
 coordsPrev = (0.0, 0.0)
@@ -80,22 +78,34 @@ while(True):
     coords = (packet.lat, packet.lon)
 
     # Reiterates loop until GPS has moved significantly 
-    """if (geopy.distance.geodesic(coordsPrev, coords).km < 0.00001) :
-        continue"""
+    if (geopy.distance.geodesic(coordsPrev, coords).km < 0.00001) :
+        continue
 
     coordsPrev = coords
 
     imageStream = getImageStream()
 
     api_response = getResponse(imageStream)
+    
 
     # Reiterates loop if no plate is found 
     if not api_response.get('results'):
          continue
    
+    # Gets timestamp of image and preliminary path for that image
     timestamp = datetime.datetime.now().strftime('%H-%M-%S')
-    i += 1
+    imagePath = f'./{dirPath}/images/image_{timestamp}'
+
+    # Creates a new line in a CSV output for each result
     for result in api_response['results']:
-        associateData(result, coords, timestamp)
+        data = [result.get('plate'), 
+                result.get('score'), 
+                result.get('vehicle', {}).get('type'),
+                coords,
+                timestamp,
+                imagePath
+                ]
+        addData(data)
+    # Saves image as image_{timestamp}
     saveImage(imageStream, timestamp) 
     
