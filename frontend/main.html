@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <link rel="stylesheet" href="main.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+</head>
+<body>
+  <input type="file" id="uploadData" accept=".csv">
+  <input type="file" id="uploadCompare" accept=".csv">
+  <div class="dashboard">
+    <div class="search column">
+      <div class="search container">
+        <div class="search box">
+          <input type="text" placeholder="Search by plate" class="search input subtext" id="text-input">
+          <input type="date" class="search input subtext" id="date-input">
+        </div>
+
+      </div>
+      <div class="plates container" id="plateContainer">
+        <!--plates added here-->
+        
+      </div>
+    </div>
+    <div class="details column ">
+      <div class="plate-display container">
+        <div class="plates box display" id="displayBox">
+          <!--<div class="dot"></div>-->
+          <div class="plate-text main-text display-text">------</div>
+          <div class="status-text display-text"></div>
+          <div class="confidence-text subtext display-text">0%</div>
+          <div class="date-text subtext display-text">DATE</div>
+        </div>
+      </div>
+      <div class="plate-image container">
+        <div class="plate-image box">
+          <img class="plate-image display-image" src="LICENSE TEST.PNG">
+        </div>
+      </div>
+    </div>
+    <div class="map column">
+      
+      <div class="map container">
+        <div class="map box">
+          <iframe class="map map-iframe" src="https://www.google.com/maps/embed/v1/place?q=(35.5%2C%20-89)&key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8" onload="iframe_load();" id="preview" style="border: 0;" frameborder="0"></iframe>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="main.js"></script>
+</body>
+</html>
