@@ -13,7 +13,7 @@ import json
 import csv
 
 from PIL import Image
-from pi.picamera import PiCamera
+from picamera import PiCamera
 import socketio
 
 sio = socketio.client()
