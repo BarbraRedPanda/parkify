@@ -1,4 +1,4 @@
-const socket = io('http://<YOUR_NODEJS_SERVER_IP>:3000');
+const socket = io('http://192.168.1.71:8080');
 const imageDisplay = document.querySelector('.display-image');
 
 document.getElementById('startButton').addEventListener('click', function() {

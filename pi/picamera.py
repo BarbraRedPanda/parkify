@@ -17,7 +17,7 @@ from pi.picamera import PiCamera
 import socketio
 
 sio = socketio.client()
-sio.connect('http://localhost:8080')
+sio.connect('http://192.168.1.71:8080')
 capturing = False
 
 # Connect to the server
