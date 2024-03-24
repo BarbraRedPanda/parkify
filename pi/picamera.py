@@ -13,7 +13,39 @@ import json
 import csv
 
 from PIL import Image
-from picamera import PiCamera
+from pi.picamera import PiCamera
+import socketio
+
+sio = socketio.client()
+sio.connect('http://localhost:8080')
+capturing = False
+
+# Connect to the server
+@sio.event
+def connect():
+    print('Connected to server')
+
+# Disconnect from the server
+@sio.event
+def disconnect():
+    print('Disconnected from server')
+
+# Handle incoming messages from the server
+@sio.on('message')
+def on_message(data):
+    print('Message from server:', data)
+
+@sio.on('captureOn')
+def on_captureOn():
+    global capturing
+    capturing = True
+    print("Capturing toggled ON")
+
+@sio.on('captureOff')
+def on_captureOff():
+    global capturing
+    capturing = False
+    print("Capturing toggled OFF")
 
 
 unsentStreams = []
@@ -59,9 +91,7 @@ def getResponse(image_stream):
 # Adds data to CSV file ./responses/responsesDATE/data.csv
 # data parameter is an array of [plate, confidence, vehicle type, coords, time, image path]
 def addData(data):
-    with open(f'./{dirPath}/data.csv', 'a', newline='') as file:
-        writer = csv.writer(file)
-        writer.writerow(data)
+    sio.emit('plateData', data)
 
 
         
@@ -86,24 +116,30 @@ def prepareData(apiResponse, imageStream):
                 coords[0],
                 coords[1],
                 timestamp,
-                imagePath
+                imageStream
                 ]
         addData(data)
     # Saves image as image_{timestamp}
-    saveImage(imageStream, timestamp) 
+    #saveImage(imageStream, timestamp) 
     
 
 # Takes a picture every 3 seconds if user has moved 
 coordsPrev = (0.0, 0.0)
 while(True):
+    # Only captures when permitted by frontend
+    if not capturing:
+        continue
+
     time.sleep(3)
     # Receive GPS packet
     packet = gpsd.get_current();
     coords = (packet.lat, packet.lon)
 
     # Reiterates loop until GPS has moved significantly 
+    """
     if (geopy.distance.geodesic(coordsPrev, coords).km < 0.00001) :
         continue
+    """
 
     coordsPrev = coords
 
@@ -117,6 +153,7 @@ while(True):
             # if there's no response for a plate, skip it
             if not response.get('results'):
                 continue
-            prepareData(response, stream)
+            # emits an array of the json from the stream and the stream itself
+            sio.emit('apiResponse', [response, stream, coords[0], coords[1]])
     except:
          print('No internet!')
