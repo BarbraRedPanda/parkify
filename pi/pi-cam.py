@@ -15,10 +15,11 @@ import csv
 from PIL import Image
 from picamera import PiCamera
 import socketio
+import base64
 
-sio = socketio.client()
+sio = socketio.Client()
 sio.connect('http://192.168.1.71:8080')
-capturing = False
+capturing = True
 
 # Connect to the server
 @sio.event
@@ -80,11 +81,12 @@ def getImageStream():
 #   return  - response.json() - JSON of an API 
 def getResponse(image_stream):
     response = requests.post(
-        'https://exotek.co/api/misc/platerecognizer',
+        #'https://exotek.co/api/misc/platerecognizer',
+        'https://api.platerecognizer.com/v1/plate-reader/',
         files={'upload': image_stream},
         headers={'Authorization': f'Token {TOKEN}'}
     )
-    print(response.json())
+    # print(response.json())
     return response.json()
 
 
@@ -144,16 +146,18 @@ while(True):
     coordsPrev = coords
 
     imageStream = getImageStream()
-
     # Adds current image stream to queue for request
     unsentStreams.append(imageStream)
-    try:
-        for stream in unsentStreams:
-            response = getResponse(stream)
-            # if there's no response for a plate, skip it
-            if not response.get('results'):
-                continue
+    for stream in unsentStreams:
+
+        response = getResponse(stream)
+        # if there's no response for a plate, skip it
+        if not response.get('results'):
+            continue
+        try:
+            streamNew = base64.b64encode(stream.getvalue()).decode('utf-8')
             # emits an array of the json from the stream and the stream itself
-            sio.emit('apiResponse', [response, stream, coords[0], coords[1]])
-    except:
-         print('No internet!')
+            print('emittin!')
+            sio.emit('apiResponse', [response, streamNew, coords[0], coords[1]])
+        except Exception as error:
+            print('No send', error)
