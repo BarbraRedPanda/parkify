@@ -1,10 +1,11 @@
 const socket = io('http://192.168.1.71:8080');
 const imageDisplay = document.querySelector('.display-image');
 
-document.getElementById('startButton').addEventListener('click', function() {
+document.querySelector('.startButton').addEventListener('click', function() {
+    console.log(passPlatesExists);
     if(passPlatesExists)    {
         socket.send('toggleCapture');
-        document.getElementById('startButton').style['background-color'] = 'gray';
+        document.querySelector('.startButton').style['background-color'] = 'gray';
     }   else    {
         console.log('Upload a reference first!');
     }

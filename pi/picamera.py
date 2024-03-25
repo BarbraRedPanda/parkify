@@ -18,7 +18,7 @@ import socketio
 
 sio = socketio.client()
 sio.connect('http://192.168.1.71:8080')
-capturing = False
+capturing = True
 
 # Connect to the server
 @sio.event

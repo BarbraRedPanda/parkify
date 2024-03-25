@@ -6,20 +6,28 @@ const { Server } = require('socket.io');
 const server = http.createServer();
 
 // Create a Socket.IO server
-const io = new Server(server);
+// Create a Socket.IO server
+const io = new Server(server, {
+    cors: {
+      origin: '*'
+    }
+  });
+  
 
-let captureRunning = false;
+let captureRunning = true;
 
 // Handle Socket.IO connections
 io.on('connection', (socket) => {
     console.log('Socket.IO connected');
 
     // Handle incoming messages from clients
-    socket.on('toggleCapture', () => {
+    io.on('toggleCapture', () => {
+        console.log('hello world');
         toggleCapture();
     });
 
-    socket.on('apiResponse', (apiResponse) => {
+    io.on('apiResponse', (apiResponse) => {
+        console.log('Python info receved!');
         // Passes json and image through to front end
         let json = JSON.parse(apiResponse[0]); 
         let streamData = apiResponse[1];
