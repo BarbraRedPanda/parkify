@@ -1,34 +1,26 @@
-const socket = io('http://192.168.1.71:8080');
-const imageDisplay = document.querySelector('.display-image');
-
-document.getElementById('startButton').addEventListener('click', function() {
-    if(passPlatesExists)    {
-        socket.send('toggleCapture');
-        document.getElementById('startButton').style['background-color'] = 'gray';
-    }   else    {
-        console.log('Upload a reference first!');
-    }
-});
-
-
-socket.on('plateRead', (plate) => {
-    createPlateElement(plate);
-});
-
-
+// Creates 2D arrays
+let allPlates = {
+  "plates": [],
+  "confs": [],
+  "types": [],
+  "lat": [],
+  'lon': [],
+  "times": [],
+  "paths": []
+};
 let passPlates = {
     "plates": [],
     "stati": []
 };
 
 let passPlatesExists = false;
-let prevDisplayPlate = null;
 
 // Gets certain elements
 const plateDisplay = document.querySelector('.plate-text');
 const statusDisplay = document.querySelector('.status-text');
 const confDisplay = document.querySelector('.confidence-text');
 const dateDisplay = document.querySelector('.date-text');
+const imageDisplay = document.querySelector('.display-image');
 const mapDisplay = document.querySelector('iframe.map');
 
 // Function to parse CSV files
@@ -68,24 +60,28 @@ function parseCSV(event, keys) {
 
 // Function to create a box displaying information for a given license plate
 // plateIndex - index of a given plate's data in allPlates
-function createPlateElement(plate) {
+function createPlateElement(plateIndex) {
+    const plate = allPlates['plates'][plateIndex];
+    const conf = allPlates['confs'][plateIndex]*100 + '%';
+    const date = allPlates['times'][plateIndex];
+    const path = '.' + ['paths'][plateIndex]; // Exits frontend dir and into 
     const initialStatus = testStatus(plate);
-    const location = plate.lat + ", " + plate.lon;
+    const location = allPlates.lat[plateIndex] + ", " + allPlates.lon[plateIndex];
     const mapSource = 'https://www.google.com/maps/embed/v1/place?q=' + location + '&key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8';
 
    
 
     const plateElement = document.createElement('div');
     plateElement.classList.add('plates', 'box');
-    plateElement.id = 'infobox' + plate.plateText; 
+    plateElement.id = 'infobox' + plate; 
     document.getElementById('plateContainer').appendChild(plateElement);
 
 
     const subDivs = [
-        { classes: ['plate-text', 'main-text'], text: plate.plateText },
+        { classes: ['plate-text', 'main-text'], text: plate },
         { classes: ['status-text', plate], text: initialStatus },
-        { classes: ['confidence-text', 'subtext'], text: plate.score},
-        { classes: ['date-text', 'subtext'], text: "3/25/24"}
+        { classes: ['confidence-text', 'subtext'], text: conf },
+        { classes: ['date-text', 'subtext'], text: date }
     ];
     
     // Loop through the subDivs array and create each sub-div
@@ -100,15 +96,13 @@ function createPlateElement(plate) {
     });
 
     plateElement.addEventListener('click', () =>    {
-        prevDisplayPlate.style['background-color'] = "#1f1f28"
         plateElement.style['background-color'] = '#f1f1f1';
-        plateDisplay.textContent = plate.plateText;
-        statusDisplay.textContent = plate.status;
-        confDisplay.textContent = plate.score;
-        dateDisplay.textContent = "3/25/2024";
-        imageDisplay.setAttribute('src', plate.image);
+        plateDisplay.textContent = plate;
+        statusDisplay.textContent = testStatus(plate);
+        confDisplay.textContent = conf;
+        dateDisplay.textContent = date;
+        imageDisplay.setAttribute('src', path);
         mapDisplay.setAttribute('src', mapSource);
-        prevDisplayPlate = plateElement;
     });
 
 
@@ -122,13 +116,12 @@ function testStatus(plate)  {
     if(!passPlatesExists) return null;
 
     // FUTURE IMPROVEMENT - PRESORT LIST AND USE BINARY SEARCH
-    if(passPlates.plates.indexOf(plate.plateText) >= 0) return "pass";
+    if(passPlates.plates.indexOf(plate) >= 0) return "pass";
     return "fail";
 }
 
 function updateStatus() {
-    console.log('try again later');
-    /*allPlates.plates.forEach((plate, index) =>  {
+    allPlates.plates.forEach((plate, index) =>  {
         const plateStatusBox = document.querySelector('.status-text.' + plate);
         plateStatusBox.textContent = testStatus(plate);
         plateStatusBox.style['opacity'] = '1';
@@ -147,10 +140,29 @@ function updateStatus() {
                 plateStatusBox.style['background-color'] = "pink";
                 break;
         }
-    });*/
+    });
 }
 
 
+// Event listener for uploading CSV data
+document.getElementById("uploadData").addEventListener('change', async (event) => {
+    try {
+        const newData = await parseCSV(event, ['plates', 'confs', 'types', 'lat', 'lon', 'times', 'paths']);
+        // Iterate through the new data and create new elements for new plates
+        newData['plates'].forEach((plate, index) => {
+            // Skip plate if plate is already in allPlates or confidence < 60%
+            if (allPlates['plates'].includes(plate) || newData.confs[index] < 0.6) return;
+
+            Object.keys(newData).forEach(key => {
+                allPlates[key] = allPlates[key].concat(newData[key][index]);
+            });
+            // Create a box for new plates
+            createPlateElement(allPlates['plates'].length-1);
+        });
+    } catch (error) {
+        console.error(error);
+    }
+});
 
 // Event listener for uploading comparison data
 document.getElementById('uploadCompare').addEventListener('change', async (event) => {
